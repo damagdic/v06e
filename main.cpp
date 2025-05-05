@@ -11,6 +11,7 @@ void get_font(HWND parent, LOGFONT& lf, COLORREF& cr) {
     cf.Flags = CF_INITTOLOGFONTSTRUCT | CF_SCREENFONTS | CF_EFFECTS;
     cf.lpLogFont = &chosenFont;
     cf.hwndOwner = parent;
+    cf.rgbColors = cr;
     if (ChooseFont(&cf)) {
         cr = cf.rgbColors;
         lf = chosenFont;
@@ -55,10 +56,10 @@ void main_window::on_paint(HDC hdc) {
     HBRUSH whiteBrush = (HBRUSH)GetStockObject(WHITE_BRUSH);
 
     const double x = rect.right / 9.0;
-    const double y = rect.bottom / static_cast<double>(txt.size());
+    const double y = rect.bottom / static_cast<double>(txt.size() ? txt.size() : 1);
 
     for (size_t i = 0; i < txt.size(); ++i) {
-        unsigned char ch = txt[i];
+        unsigned char ch = static_cast<unsigned char>(txt[i] & 0xFF);
         for (int j = 0; j < 8; ++j) {
             RECT r = {
                 LONG(j * x),
@@ -79,13 +80,11 @@ void main_window::on_paint(HDC hdc) {
     }
 }
 
+
 void main_window::on_command(int id) {
     switch (id) {
     case ID_FONT:
         get_font(*this, lf, cr);
-        break;
-    case ID_COLOR:
-        back = get_color(*this, back);
         break;
     case ID_TEXT: {
         main_dialog t;
