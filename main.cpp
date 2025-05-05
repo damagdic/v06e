@@ -55,31 +55,34 @@ void main_window::on_paint(HDC hdc) {
     HBRUSH blackBrush = (HBRUSH)GetStockObject(BLACK_BRUSH);
     HBRUSH whiteBrush = (HBRUSH)GetStockObject(WHITE_BRUSH);
 
-    const double x = rect.right / 9.0;
-    const double y = rect.bottom / static_cast<double>(txt.size() ? txt.size() : 1);
+    const int bits_per_char = sizeof(TCHAR) * 8;
+
+    const double cell_width = rect.right / static_cast<double>(bits_per_char + 1);
+    const double line_height = rect.bottom / static_cast<double>(txt.size() ? txt.size() : 1);
 
     for (size_t i = 0; i < txt.size(); ++i) {
-        unsigned char ch = static_cast<unsigned char>(txt[i] & 0xFF);
-        for (int j = 0; j < 8; ++j) {
+        TCHAR ch = txt[i];
+
+        for (int bit = 0; bit < bits_per_char; ++bit) {
+            bool is_one = (ch & (1 << (bits_per_char - 1 - bit))) != 0;
             RECT r = {
-                LONG(j * x),
-                LONG(i * y),
-                LONG((j + 1) * x),
-                LONG((i + 1) * y)
+                LONG(bit * cell_width),
+                LONG(i * line_height),
+                LONG((bit + 1) * cell_width),
+                LONG((i + 1) * line_height)
             };
-            FillRect(hdc, &r, (ch & (1 << (7 - j))) ? whiteBrush : blackBrush);
+            FillRect(hdc, &r, is_one ? whiteBrush : blackBrush);
         }
         RECT r = {
-            LONG(8 * x),
-            LONG(i * y),
-            LONG(9 * x),
-            LONG((i + 1) * y)
+            LONG(bits_per_char * cell_width),
+            LONG(i * line_height),
+            LONG((bits_per_char + 1) * cell_width),
+            LONG((i + 1) * line_height)
         };
-        TCHAR letter[2] = { txt[i], 0 };
+        TCHAR letter[2] = { ch, 0 };
         DrawText(hdc, letter, 1, &r, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
     }
 }
-
 
 void main_window::on_command(int id) {
     switch (id) {
